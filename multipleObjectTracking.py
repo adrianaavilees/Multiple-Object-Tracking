@@ -1,5 +1,6 @@
 import cv2
 from ultralytics import YOLO
+from deep_sort_realtime.deepsort_tracker import DeepSort #! pip install deepsort / pip install deep-sort-realtime
 
 VIDEOS_PATH = "videos/"
 
@@ -40,15 +41,15 @@ class ObjectDetector:
             boxes = result.boxes
             for box in boxes:
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
-                
                 width, height = x2 - x1, y2 - y1
-                final_cars_boxes.append([x1, y1, width, height])
+                confidence = box.conf[0]
+                class_id = box.cls[0]
+                
+                # Format for deepSORT: [x, y, width, height], confidence, class_id
+                final_cars_boxes.append(([x1, y1, width, height], confidence, int(class_id))) 
 
         return final_cars_boxes
 
-
-
-#TODO: añadir la detección, el seguimiento y el conteo de coches...
 
 ######## MAIN ########
 if __name__ == "__main__":
@@ -56,13 +57,28 @@ if __name__ == "__main__":
     video_reader = FileVideoReader(video_name)
     detector = ObjectDetector("yolov8n.pt") #TODO: probar yolov8n.pt para más velocidad. El yolov8s va MUY lento
 
+    # Inicialize the tracker for deepSORT
+    #* max_age: nombre de fotogrames que un objecte pot "desaparèixer" abans que l'eliminem
+    #* n_init: nombre de fotogrames que un objecte ha d'aparèixer abans de ser confirmat com a seguiment
+    #* nms_max_overlap: màxima superposició per a la supressió no màxima
+    tracker = DeepSort(max_age=30, n_init=3, nms_max_overlap=1.0) 
+
     for frame in video_reader.read():
-        cars_boxes = detector.detect(frame)
+        detections = detector.detect(frame)
+
+        # Update the tracker with the new detections
+        # tracked_objects: list of tracked objects with their IDs and bounding boxes
+        tracked_objects = tracker.update_tracks(detections, frame=frame)
         
-        for box in cars_boxes:
-            x, y, w, h = box
+        for obj in tracked_objects:
+            if not obj.is_confirmed():
+                continue
+            obj_id = obj.track_id
+            ltrb = obj.to_ltrb()  # [left, top, right, bottom]
+            x, y, x2, y2 = map(int, ltrb)
+            w, h = x2 - x, y2 - y
             cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2) # blue color box for cars
-            cv2.putText(frame, "Car", (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2) 
+            cv2.putText(frame, f"Car ID: {obj_id} ", (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2) 
         
         cv2.imshow('Detections', frame)
 
