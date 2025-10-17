@@ -5,6 +5,7 @@ from collections import OrderedDict
 import numpy as np
 
 VIDEOS_PATH = "videos/"
+SHOW_VIDEO = False #* Change this depending if we want to visualize the video or not
 
 # DEFINE THE COORDINATES FOR THE LINE FOR COUNTING
 LINE_START = (10, 650)
@@ -23,12 +24,12 @@ def count_cars_across_line(tracked_objects, position_history, line_y, counted_id
             # Moving down
             if prev_cy < line_y <= cy and obj_id not in counted_ids_down:
                 down_increment += 1
-                counted_ids_down.add(objID)
+                counted_ids_down.add(obj_id)
             
             # Moving up
             elif prev_cy > line_y >= cy and obj_id not in counted_ids_up:
                 up_increment += 1
-                counted_ids_up.add(objID)
+                counted_ids_up.add(obj_id)
 
         # Update the actual position
         position_history[obj_id] = cy
@@ -177,36 +178,35 @@ if __name__ == "__main__":
     counted_ids_down = set()
 
     for frame in video_reader.read():
-        cv2.line(frame, LINE_START, LINE_END, (0, 0, 255), 3) # Draw the counting line
-
         detections = detector.detect(frame)
         tracked_objects = tracker.update(detections)
 
-        # Draw the rectangles of YOLO detections
-        for (startX, startY, endX, endY) in detections:
-             cv2.rectangle(frame, (int(startX), int(startY)), (int(endX), int(endY)), (0, 255, 0), 2)
-
-        
         up_inc, down_inc = count_cars_across_line(tracked_objects, position_history, LINE_Y, counted_ids_up, counted_ids_down)
         vehicles_up += up_inc
         vehicles_down += down_inc
+
+        # Draw the rectangles of YOLO detections
+        # for (startX, startY, endX, endY) in detections:
+        #      cv2.rectangle(frame, (int(startX), int(startY)), (int(endX), int(endY)), (0, 255, 0), 2)
+
+        if SHOW_VIDEO:
+            cv2.line(frame, LINE_START, LINE_END, (0, 0, 255), 3) # Draw the counting line    
+            for (objID, centroid) in tracked_objects.items():
+                cv2.putText(frame, f"ID {objID}", (centroid[0] - 10, centroid[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                cv2.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+
+            cv2.putText(frame, f"UP: {vehicles_up}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+            cv2.putText(frame, f"DOWN: {vehicles_down}", (50, 140), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
             
-        for (objID, centroid) in tracked_objects.items():
-            text = f"ID {objID}"
-            cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-            cv2.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+            cv2.imshow('Tracker', frame)
 
-        cv2.putText(frame, f"UP: {vehicles_up}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
-        cv2.putText(frame, f"DOWN: {vehicles_down}", (50, 140), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
-        
-        cv2.imshow('Tracker', frame)
-
-        key = cv2.waitKey(1) 
-        # Close the video window if 'Esc' is pressed or the window is closed
-        if key == 27 or cv2.getWindowProperty('Tracker', cv2.WND_PROP_VISIBLE) < 1:
-            break
+            key = cv2.waitKey(1) 
+            # Close the video window if 'Esc' is pressed or the window is closed
+            if key == 27 or cv2.getWindowProperty('Tracker', cv2.WND_PROP_VISIBLE) < 1:
+                break
     
-    print("Closing video...")
+            print("Closing video...")
+    
     print(f"Total UP: {vehicles_up}")
     print(f"Total DOWN: {vehicles_down}")
     video_reader.release()
