@@ -204,7 +204,7 @@ if __name__ == "__main__":
         
         tracked_objects = tracker.update(detections)
 
-        counted_up_ids, counted_down_ids = count_cars_across_line(tracked_objects, position_history, line_y=650, vehicles_up, vehicles_down)
+        #counted_up_ids, counted_down_ids = count_cars_across_line(tracked_objects, position_history, line_y=650, vehicles_up, vehicles_down)
                     
         #for obj in tracked_objects:
         for (objID, centroid) in tracked_objects.items():
@@ -219,8 +219,8 @@ if __name__ == "__main__":
             cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             cv2.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
-        cv2.putText(frame, f"UP: {len(counted_up_ids)}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 0), 3)
-        cv2.putText(frame, f"DOWN: {len(counted_down_ids)}", (50, 140), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 0), 3)
+        # cv2.putText(frame, f"UP: {len(counted_up_ids)}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 0), 3)
+        # cv2.putText(frame, f"DOWN: {len(counted_down_ids)}", (50, 140), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 0), 3)
         
         cv2.imshow('Tracker', frame)
 
