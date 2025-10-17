@@ -1,6 +1,5 @@
 import cv2
-from ultralytics import YOLO
-from deep_sort_realtime.deepsort_tracker import DeepSort #! pip install deepsort / pip install deep-sort-realtime
+from ultralytics import YOLO #! pip install ultralytics
 from scipy.spatial import distance as dist #! pip install scipy
 from collections import OrderedDict 
 import numpy as np
@@ -10,21 +9,31 @@ VIDEOS_PATH = "videos/"
 # DEFINE THE COORDINATES FOR THE LINE FOR COUNTING
 LINE_START = (10, 650)
 LINE_END = (600, 650)
+LINE_Y = 650
 
-def count_cars_across_line(vehicle_positions, position_history, line_y, vehicles_up, vehicles_down):
-    for obj_id, (cx, cy) in vehicle_positions.items():
+def count_cars_across_line(tracked_objects, position_history, line_y, counted_ids_up, counted_ids_down):
+    """Counts vehicles crossing a horizontal line"""
+    up_increment = 0
+    down_increment = 0
+
+    for obj_id, (cx, cy) in tracked_objects.items():
         if obj_id in position_history:
             prev_cy = position_history[obj_id]
-            # Down
-            if prev_cy < line_y <= cy:
-                vehicles_down += 1
+
+            # Moving down
+            if prev_cy < line_y <= cy and obj_id not in counted_ids_down:
+                down_increment += 1
+                counted_ids_down.add(objID)
             
-            # Up
-            elif prev_cy > line_y >= cy:
-                vehicles_up += 1
+            # Moving up
+            elif prev_cy > line_y >= cy and obj_id not in counted_ids_up:
+                up_increment += 1
+                counted_ids_up.add(objID)
+
+        # Update the actual position
         position_history[obj_id] = cy
     
-    return vehicles_up, vehicles_down
+    return up_increment, down_increment
 
 class CentroidTracker:
     def __init__(self, maxDisappeared=50):
@@ -156,39 +165,39 @@ class ObjectDetector:
 
 ######## MAIN ########
 if __name__ == "__main__":
-    video_name = "video3.mp4"
+    video_name = "video1.mp4"
     video_reader = FileVideoReader(video_name)
     detector = ObjectDetector("yolov8n.pt") #TODO: probar yolov8n.pt para más velocidad. El yolov8s va MUY lento
-
-    # Inicialize the tracker for OPENCV
     tracker = CentroidTracker(maxDisappeared=20)
 
     vehicles_up = 0
     vehicles_down = 0
     position_history = {}
+    counted_ids_up = set()
+    counted_ids_down = set()
 
     for frame in video_reader.read():
-        # Draw the counting line
-        cv2.line(frame, LINE_START, LINE_END, (0, 0, 255), 3)
+        cv2.line(frame, LINE_START, LINE_END, (0, 0, 255), 3) # Draw the counting line
 
         detections = detector.detect(frame)
+        tracked_objects = tracker.update(detections)
 
         # Draw the rectangles of YOLO detections
         for (startX, startY, endX, endY) in detections:
-             cv2.rectangle(frame, (int(startX), int(startY)), (int(endX), int(endY)), (255, 0, 0), 2)
+             cv2.rectangle(frame, (int(startX), int(startY)), (int(endX), int(endY)), (0, 255, 0), 2)
 
-        tracked_objects = tracker.update(detections)
-
-        #counted_up_ids, counted_down_ids = count_cars_across_line(tracked_objects, position_history, line_y=650, vehicles_up, vehicles_down)
-                    
+        
+        up_inc, down_inc = count_cars_across_line(tracked_objects, position_history, LINE_Y, counted_ids_up, counted_ids_down)
+        vehicles_up += up_inc
+        vehicles_down += down_inc
+            
         for (objID, centroid) in tracked_objects.items():
-
             text = f"ID {objID}"
             cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             cv2.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
-        # cv2.putText(frame, f"UP: {len(counted_up_ids)}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 0), 3)
-        # cv2.putText(frame, f"DOWN: {len(counted_down_ids)}", (50, 140), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 0), 3)
+        cv2.putText(frame, f"UP: {vehicles_up}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+        cv2.putText(frame, f"DOWN: {vehicles_down}", (50, 140), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
         
         cv2.imshow('Tracker', frame)
 
@@ -198,4 +207,6 @@ if __name__ == "__main__":
             break
     
     print("Closing video...")
+    print(f"Total UP: {vehicles_up}")
+    print(f"Total DOWN: {vehicles_down}")
     video_reader.release()
