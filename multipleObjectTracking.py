@@ -11,8 +11,20 @@ VIDEOS_PATH = "videos/"
 LINE_START = (10, 650)
 LINE_END = (600, 650)
 
-def count_cars_across_line(tracked_objects, line_start, line_end, vehicle_positions, vehicles_up, vehicles_down):
-    """Counts vehicles crossing the defined line"""
+def count_cars_across_line(vehicle_positions, position_history, line_y, vehicles_up, vehicles_down):
+    for obj_id, (cx, cy) in vehicle_positions.items():
+        if obj_id in position_history:
+            prev_cy = position_history[obj_id]
+            # Down
+            if prev_cy < line_y <= cy:
+                vehicles_down += 1
+            
+            # Up
+            elif prev_cy > line_y >= cy:
+                vehicles_up += 1
+        position_history[obj_id] = cy
+    
+    return vehicles_up, vehicles_down
 
 class CentroidTracker:
     def __init__(self, maxDisappeared=50):
@@ -172,6 +184,10 @@ if __name__ == "__main__":
     # nms_max_overlap: màxima superposició per a la supressió no màxima
     #tracker = DeepSort(max_age=30, n_init=3, nms_max_overlap=1.0) 
 
+    vehicles_up = 0
+    vehicles_down = 0
+    position_history = {}
+
     for frame in video_reader.read():
         # Draw the counting line
         cv2.line(frame, LINE_START, LINE_END, (0, 0, 255), 3)
@@ -187,6 +203,8 @@ if __name__ == "__main__":
         # tracked_objects = tracker.update_tracks(detections, frame=frame)
         
         tracked_objects = tracker.update(detections)
+
+        counted_up_ids, counted_down_ids = count_cars_across_line(tracked_objects, position_history, line_y=650, vehicles_up, vehicles_down)
                     
         #for obj in tracked_objects:
         for (objID, centroid) in tracked_objects.items():
@@ -201,6 +219,9 @@ if __name__ == "__main__":
             cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             cv2.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
+        cv2.putText(frame, f"UP: {len(counted_up_ids)}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 0), 3)
+        cv2.putText(frame, f"DOWN: {len(counted_down_ids)}", (50, 140), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 0), 3)
+        
         cv2.imshow('Tracker', frame)
 
         key = cv2.waitKey(1) 
