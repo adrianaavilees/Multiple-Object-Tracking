@@ -4,6 +4,13 @@ from deep_sort_realtime.deepsort_tracker import DeepSort #! pip install deepsort
 
 VIDEOS_PATH = "videos/"
 
+# DEFINE THE COORDINATES FOR THE LINE FOR COUNTING
+LINE_START = (10, 650)
+LINE_END = (600, 650)
+
+def count_cars_across_line(tracked_objects, line_start, line_end, vehicle_positions, vehicles_up, vehicles_down):
+    """Counts vehicles crossing the defined line"""
+
 class FileVideoReader:
     def __init__(self, video_name):
         self.video_path = VIDEOS_PATH + video_name
@@ -53,7 +60,7 @@ class ObjectDetector:
 
 ######## MAIN ########
 if __name__ == "__main__":
-    video_name = "video1.mp4"
+    video_name = "video3.mp4"
     video_reader = FileVideoReader(video_name)
     detector = ObjectDetector("yolov8n.pt") #TODO: probar yolov8n.pt para más velocidad. El yolov8s va MUY lento
 
@@ -64,6 +71,9 @@ if __name__ == "__main__":
     tracker = DeepSort(max_age=30, n_init=3, nms_max_overlap=1.0) 
 
     for frame in video_reader.read():
+        # Draw the counting line
+        cv2.line(frame, LINE_START, LINE_END, (0, 0, 255), 3)
+
         detections = detector.detect(frame)
 
         # Update the tracker with the new detections
