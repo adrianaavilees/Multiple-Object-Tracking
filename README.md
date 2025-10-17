@@ -32,6 +32,9 @@ TODO:
 
     Determinar la Direcció: Un cop detectat un creuament, mirarem si el moviment ha estat cap amunt o cap avall de la rampa
 
+    * mirar el simple tracker que le pasas un centroide y analiza a partir de eso, los trackers de OpenCV son más robustos pero captan toda la imagen
+    * hacer contador a ser posible para numerar cuántos coches suben y cuantos bajan
+
 
 
 
