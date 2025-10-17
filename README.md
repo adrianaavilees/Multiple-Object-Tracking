@@ -7,7 +7,7 @@ L'objectiu d'aquest repte és saber quants automobils es mouen en cada un dels c
 
 
 
-DIARI DE DESENVOLUPAMENT:
+## DIARI DE DESENVOLUPAMENT:
 
 14/10/2025:
     ✓ Configuració de l'entorn / Reader del video OPENCV
@@ -31,19 +31,13 @@ TODO:
 
     ✓ Definir una linea virtual: punt d'inici (x1, y1) i un punt final (x2, y2). Mes o menys quasi al final de la imatge, on el pas de peatons. 
 
-    Obtenir el punt central de cada vechicle per determinar si ha pasat per la linea. 
-
-    Guardar historial de posicions: Necessitem saber no només on està un cotxe ara, sinó també on estava en el fotograma anterior. Farem servir un diccionari per guardar l'última posició coneguda de cada ID. Perque els cotxes parats no volem tenir-los en compte, per molt que el seu punt central esitigui on la linea. 
+    ✓ Obtenir el punt central de cada vechicle per determinar si ha pasat per la linea. 
 
     Determinar la Direcció: Un cop detectat un creuament, mirarem si el moviment ha estat cap amunt o cap avall de la rampa
 
-    * mirar el simple tracker que le pasas un centroide y analiza a partir de eso, los trackers de OpenCV son más robustos pero captan toda la imagen
-    * hacer contador a ser posible para numerar cuántos coches suben y cuantos bajan
+    
 
-
-
-
-REFERÈNCIES
+## REFERÈNCIES
 
 https://pyimagesearch.com/2017/02/06/faster-video-file-fps-with-cv2-videocapture-and-opencv/
 https://pypi.org/project/deepsort/ 

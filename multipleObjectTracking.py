@@ -153,21 +153,6 @@ class ObjectDetector:
         
         return bounding_boxes
 
-        #* THIS IMPLEMENTATION IS FOR THE DEEP SORT TRACKER
-        # final_cars_boxes = []
-        # for result in results:
-        #     boxes = result.boxes
-        #     for box in boxes:
-        #         x1, y1, x2, y2 = map(int, box.xyxy[0])
-        #         width, height = x2 - x1, y2 - y1
-        #         confidence = box.conf[0]
-        #         class_id = box.cls[0]
-                
-        #         # Format for deepSORT: [x, y, width, height], confidence, class_id
-        #         final_cars_boxes.append(([x1, y1, width, height], confidence, int(class_id))) 
-
-        # return final_cars_boxes
-
 
 ######## MAIN ########
 if __name__ == "__main__":
@@ -177,12 +162,6 @@ if __name__ == "__main__":
 
     # Inicialize the tracker for OPENCV
     tracker = CentroidTracker(maxDisappeared=20)
-
-    #* Inicialize the tracker for deepSORT
-    # max_age: nombre de fotogrames que un objecte pot "desaparèixer" abans que l'eliminem
-    # n_init: nombre de fotogrames que un objecte ha d'aparèixer abans de ser confirmat com a seguiment
-    # nms_max_overlap: màxima superposició per a la supressió no màxima
-    #tracker = DeepSort(max_age=30, n_init=3, nms_max_overlap=1.0) 
 
     vehicles_up = 0
     vehicles_down = 0
@@ -198,24 +177,13 @@ if __name__ == "__main__":
         for (startX, startY, endX, endY) in detections:
              cv2.rectangle(frame, (int(startX), int(startY)), (int(endX), int(endY)), (255, 0, 0), 2)
 
-        # Update the tracker with the new detections THIS IS FOR DEEP SORT
-        # tracked_objects: list of tracked objects with their IDs and bounding boxes
-        # tracked_objects = tracker.update_tracks(detections, frame=frame)
-        
         tracked_objects = tracker.update(detections)
 
         #counted_up_ids, counted_down_ids = count_cars_across_line(tracked_objects, position_history, line_y=650, vehicles_up, vehicles_down)
                     
-        #for obj in tracked_objects:
         for (objID, centroid) in tracked_objects.items():
-            # obj_id = obj.track_id
-            # ltrb = obj.to_ltrb()  # [left, top, right, bottom]
-            # x, y, x2, y2 = map(int, ltrb)
-            # w, h = x2 - x, y2 - y
 
             text = f"ID {objID}"
-            # cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2) # blue color box for cars
-            # cv2.putText(frame, f"Car ID: {obj_id} ", (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2) 
             cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             cv2.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
