@@ -13,8 +13,6 @@ GROUND_TRUTH = {
 
 SHOW_VIDEO = False  # Set to True to visualize the video during the validation
 
-
-
 if __name__ == "__main__":
     results = []
 
