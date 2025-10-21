@@ -5,12 +5,10 @@ from collections import OrderedDict
 import numpy as np
 
 VIDEOS_PATH = "videos/"
-SHOW_VIDEO = False #* Change this depending if we want to visualize the video or not
 
 # DEFINE THE COORDINATES FOR THE LINE FOR COUNTING
 LINE_START = (10, 650)
 LINE_END = (600, 650)
-LINE_Y = 650
 
 def count_cars_across_line(tracked_objects, position_history, line_y, counted_ids_up, counted_ids_down):
     """Counts vehicles crossing a horizontal line"""
@@ -163,19 +161,16 @@ class ObjectDetector:
         
         return bounding_boxes
 
+def process_video(video_name, show_video): #* Change this depending if we want to visualize the video or not
+    LINE_Y = 650
 
-######## MAIN ########
-if __name__ == "__main__":
-    video_name = "video1.mp4"
     video_reader = FileVideoReader(video_name)
     detector = ObjectDetector("yolov8n.pt") #TODO: probar yolov8n.pt para más velocidad. El yolov8s va MUY lento
     tracker = CentroidTracker(maxDisappeared=20)
 
-    vehicles_up = 0
-    vehicles_down = 0
+    vehicles_up, vehicles_down = 0, 0
     position_history = {}
-    counted_ids_up = set()
-    counted_ids_down = set()
+    counted_ids_up, counted_ids_down = set(), set()
 
     for frame in video_reader.read():
         detections = detector.detect(frame)
@@ -185,11 +180,7 @@ if __name__ == "__main__":
         vehicles_up += up_inc
         vehicles_down += down_inc
 
-        # Draw the rectangles of YOLO detections
-        # for (startX, startY, endX, endY) in detections:
-        #      cv2.rectangle(frame, (int(startX), int(startY)), (int(endX), int(endY)), (0, 255, 0), 2)
-
-        if SHOW_VIDEO:
+        if show_video:
             cv2.line(frame, LINE_START, LINE_END, (0, 0, 255), 3) # Draw the counting line    
             for (objID, centroid) in tracked_objects.items():
                 cv2.putText(frame, f"ID {objID}", (centroid[0] - 10, centroid[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
@@ -205,8 +196,13 @@ if __name__ == "__main__":
             if key == 27 or cv2.getWindowProperty('Tracker', cv2.WND_PROP_VISIBLE) < 1:
                 break
     
-            print("Closing video...")
-    
-    print(f"Total UP: {vehicles_up}")
-    print(f"Total DOWN: {vehicles_down}")
     video_reader.release()
+    return vehicles_up, vehicles_down
+
+######## MAIN ########
+if __name__ == "__main__":
+    video_file = "video1.mp4" 
+    up_count, down_count = process_video(video_file, show_video=True)
+    print(f"Total cars moving UP: {up_count}")
+    print(f"Total cars moving DOWN: {down_count}")
+    
