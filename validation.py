@@ -60,7 +60,7 @@ if __name__ == "__main__":
     print(f"MAE DOWN: {MAE_down:.2f}")
 
     # Visual comparison
-    colors = ["#5890b8", "#ee6767"]
+    colors = ["#64a964", "#ee6767"]
     x = np.arange(len(df["video"]))
     width = 0.35
 
@@ -88,12 +88,14 @@ if __name__ == "__main__":
     plt.show()
 
     # Error Visualization
-    plt.figure(figsize=(10, 5))
-    plt.bar(df["video"], df["error_up"], label="Error UP", color="#64a964")
-    plt.bar(df["video"], df["error_down"], label="Error DOWN", color="#d62728", alpha=0.8)
+    fig, ax = plt.subplots(figsize=(10, 5))
+    bars_up = ax.bar(x - width/2, df["error_up"], width, label="Error UP", color=colors[0])
+    bars_down = ax.bar(x + width/2, df["error_down"], width, label="Error DOWN", color=colors[1])
     plt.axhline(0, color="black", linestyle="--", linewidth=1)
-    plt.title("Counting Error per Video (Detected - Ground Truth)")
-    plt.ylabel("Error")
-    plt.legend()
-    plt.tight_layout()
+    ax.set_xticks(x)
+    ax.set_xticklabels(df["video"], rotation=30)
+    ax.set_title("Counting Error per Video (Detected - Ground Truth)")
+    ax.set_ylabel("Error (number of vehicles)")
+    ax.legend()
+    fig.tight_layout()
     plt.show()
