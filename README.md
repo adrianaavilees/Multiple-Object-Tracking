@@ -2,13 +2,10 @@
 This project uses the YOLOv8 object detection model and a custom Centroid Tracker to detect, track, and count vehicles in a video stream. It is designed to monitor a parking garage ramp, counting vehicles as they move "UP" (exiting) or "DOWN" (entering) to estimate occupancy.
 
 # Features
-    -  Object Detection: Uses YOLOv8 (specifically yolov8n.pt) to detect cars in real-time.
-
-    - Multi-Object Tracking: Implements a simple and efficient CentroidTracker to assign a unique ID to each detected vehicle and track its movement across frames.
-
-    - Directional Counting: Logs when a tracked object crosses a predefined horizontal line, incrementing separate counters for "UP" and "DOWN" movements.
-
-    - Visualization: Displays the video feed with the counting line, tracked object centroids, object IDs, and a live scoreboard of "UP" and "DOWN" counts.
+- Object Detection: Uses YOLOv8 (specifically yolov8n.pt) to detect cars in real-time.
+- Multi-Object Tracking: Implements a simple and efficient CentroidTracker to assign a unique ID to each detected vehicle and track its movement across frames.
+- Directional Counting: Logs when a tracked object crosses a predefined horizontal line, incrementing separate counters for "UP" and "DOWN" movements.
+- Visualization: Displays the video feed with the counting line, tracked object centroids, object IDs, and a live scoreboard of "UP" and "DOWN" counts.
 
 # How It Works
 The processing pipeline is structured as follows:
