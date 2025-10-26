@@ -35,14 +35,17 @@ The processing pipeline is structured as follows:
 The accuracy of the tracker was validated using the validation.py script, which compares the system's automated counts against a manually-counted "ground truth" dataset (car_count_comparison.csv) across five different test videos.
 
 **Overall Comparison**
+
 The chart below shows the total count (summed across all test videos) from the algorithm ("Predicted Count") versus the manual count ("Actual Count").
 ![alt text](image.png)
 
 **Error Per Video**
+
 This chart illustrates the percentage error for each video, showing how the model's accuracy varies under different lighting and traffic conditions.
 ![alt text](image-1.png)
 
 **Validation Script**
+
 The validation.py script automatically runs the process_video function on all test videos, aggregates the results, and generates the comparison CSV and the plots shown above.
 
 
