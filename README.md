@@ -36,7 +36,6 @@ The accuracy of the tracker was validated using the validation.py script, which 
 
 **Overall Comparison**
 The chart below shows the total count (summed across all test videos) from the algorithm ("Predicted Count") versus the manual count ("Actual Count").
-
 ![alt text](image.png)
 
 **Error Per Video**
