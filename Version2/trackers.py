@@ -76,22 +76,19 @@ class CentroidTracker:
 
         return self.objects
 
+
 class ComplexTracker(CentroidTracker):
-    def __init__(self, maxDisappeared=50, maxDistance=50, direction=False, color=False, speed=False):
+    def __init__(self, maxDisappeared=50, maxDistance=50, direction=True, color=False, speed=False):
         super().__init__(maxDisappeared)
         self.maxDistance = maxDistance
         self.direction = direction
         self.color = color
         self.speed = speed
-        self.prev_positions = OrderedDict()  # para calcular dirección y oclusiones
+        self.prev_positions = OrderedDict()  # para dirección/oclusiones opcional
 
     def update(self, bounding_boxes):
-        """
-        Similar al CentroidTracker pero añade:
-        - Filtro de distancia máxima (maxDistance)
-        - Manejo opcional de dirección (direction=True)
-        """
         if len(bounding_boxes) == 0:
+            # Mismo comportamiento que CentroidTracker
             for objectID in list(self.disappeared.keys()):
                 self.disappeared[objectID] += 1
                 if self.disappeared[objectID] > self.maxDisappeared:
@@ -104,23 +101,23 @@ class ComplexTracker(CentroidTracker):
             cY = int((startY + endY) / 2.0)
             inputCentroids[i] = (cX, cY)
 
-        # Si no hay objetos registrados, se inicializan
         if len(self.objects) == 0:
-            for i in range(0, len(inputCentroids)):
+            for i in range(len(inputCentroids)):
                 self.register(inputCentroids[i])
             return self.objects
 
-        # Ya hay objetos registrados
+        # Objetos existentes
         objectIDs = list(self.objects.keys())
         objectCentroids = list(self.objects.values())
 
-        # Calcular distancias entre los centroides existentes y los nuevos
+        # Distancias
         D = dist.cdist(np.array(objectCentroids), inputCentroids)
 
-        # Filtro de distancia máxima
-        D[D > self.maxDistance] = np.inf
+        # Filtrar por maxDistance si no es infinito
+        if self.maxDistance != float("inf"):
+            D[D > self.maxDistance] = np.inf
 
-        # Ordenar por menor distancia
+        # Asignación: idéntica a CentroidTracker
         rows = D.min(axis=1).argsort()
         cols = D.argmin(axis=1)[rows]
 
@@ -128,16 +125,15 @@ class ComplexTracker(CentroidTracker):
         usedCols = set()
 
         for (row, col) in zip(rows, cols):
-            # Ignorar distancias que superen el límite
-            if D[row, col] == np.inf:
-                continue
             if row in usedRows or col in usedCols:
+                continue
+            if D[row, col] == np.inf:
                 continue
 
             objectID = objectIDs[row]
             new_centroid = inputCentroids[col]
 
-            # Guardar dirección si está activada
+            # Opcional: dirección
             if self.direction:
                 prev_cx, prev_cy = self.objects[objectID]
                 dx = new_centroid[0] - prev_cx
@@ -150,26 +146,18 @@ class ComplexTracker(CentroidTracker):
             usedRows.add(row)
             usedCols.add(col)
 
-        # Objetos no actualizados
+        # Objetos no asignados
         unusedRows = set(range(0, D.shape[0])).difference(usedRows)
         unusedCols = set(range(0, D.shape[1])).difference(usedCols)
 
-        # Objetos desaparecidos
+        # Deregistrar o registrar igual que CentroidTracker
         if D.shape[0] >= D.shape[1]:
             for row in unusedRows:
                 objectID = objectIDs[row]
                 self.disappeared[objectID] += 1
-
-                # mantener ID del vehículo que va hacia la derecha en solapamientos.
-                if self.direction and self.disappeared[objectID] == 1:
-                    if objectID in self.prev_positions:
-                        dx = self.prev_positions[objectID]["dx"]
-                        if dx > 0:  # hacia la derecha
-                            self.disappeared[objectID] = 0  # mantenerlo visible
                 if self.disappeared[objectID] > self.maxDisappeared:
                     self.deregister(objectID)
         else:
-            # Registrar nuevos objetos
             for col in unusedCols:
                 self.register(inputCentroids[col])
 
