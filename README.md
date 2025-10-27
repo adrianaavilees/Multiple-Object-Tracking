@@ -48,6 +48,41 @@ This chart illustrates the percentage error for each video, showing how the mode
 
 The validation.py script automatically runs the process_video function on all test videos, aggregates the results, and generates the comparison CSV and the plots shown above.
 
+# Usage
+
+**Running the Tracker**
+
+To run the main tracking script on a single video, execute multipleObjectTracking.py:
+
+```python multipleObjectTracking.py```
+
+- A window will open displaying the video feed with the tracking and counting.
+- Press the 'Esc' key to quit the program.
+- Once the video finishes or you quit, the final "UP" and "DOWN" counts will be printed to the console.
+
+**Running the Validation**
+
+To generate the accuracy charts and the *car_count_comparison.csv* file, run the validation.py script. This will process all videos from video1.mp4 to video4.mp4 in headless mode.
+
+```python validation.py```
+
+# Configuration
+
+You can easily customize the script by modifying the constants at the top of the file or in the *main* block:
+
+- **Video File**: Change the video_file variable in the `if __name__ == "__main__":` block of *multipleObjectTracking.py* to your video's filename.
+- **Counting Line**: Adjust the line's position by the LINE_Y variable in `process_video` (e.g., LINE_Y = 650).
+- **Run Headless**: To run the script without showing the video window (which is faster), set `show_video=False` in the main block:
+    ```
+    if __name__ == "__main__":
+        # ...
+        up_count, down_count = process_video(video_file, show_video=False)
+        # ...
+    ```
+- **Tracker Sensitivity**: You can change the maxDisappeared parameter when creating the CentroidTracker. A higher value means the tracker will "remember" a lost object for more frames.
+    `tracker = CentroidTracker(maxDisappeared=20) # Default is 20 frames`
+- **YOLO Model**: To use a different (e.g., more accurate but slower) YOLO model, change the model name in the ObjectDetector initialization:
+    `detector = ObjectDetector("yolov8s.pt") # Use 's' (small) instead of 'n' (nano)`
 
 # References & Acknowledgements
 - This project's CentroidTracker is based on the simple object tracking tutorial by Adrian Rosebrock:
