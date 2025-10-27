@@ -10,29 +10,44 @@ VIDEOS_PATH = "videos/"
 LINE_START = (10, 650)
 LINE_END = (600, 650)
 
-def count_cars_across_line(tracked_objects, position_history, line_y, counted_ids_up, counted_ids_down):
-    """Counts vehicles crossing a horizontal line"""
-    up_increment = 0
-    down_increment = 0
+class FileVideoReader:
+    def __init__(self, video_name):
+        self.video_path = VIDEOS_PATH + video_name
+        self.cap = cv2.VideoCapture(self.video_path)
+        if not self.cap.isOpened():
+            raise ValueError(f"Error opening video file: {self.video_path}")
 
-    for obj_id, (cx, cy) in tracked_objects.items():
-        if obj_id in position_history:
-            prev_cy = position_history[obj_id]
-
-            # Moving down
-            if prev_cy < line_y <= cy and obj_id not in counted_ids_down:
-                down_increment += 1
-                counted_ids_down.add(obj_id)
+    def read(self):
+        while True:
+            # cap.read() reads the next frame from the video
+            # ret indicates if the frame was read successfully (TRUE)
+            # frame is the image 
+            ret, frame = self.cap.read()
             
-            # Moving up
-            elif prev_cy > line_y >= cy and obj_id not in counted_ids_up:
-                up_increment += 1
-                counted_ids_up.add(obj_id)
+            # If ret=False, it means the video has ended
+            if not ret:
+                break
+            yield frame
 
-        # Update the actual position
-        position_history[obj_id] = cy
-    
-    return up_increment, down_increment
+    def release(self):
+        self.cap.release()
+        cv2.destroyAllWindows()
+class ObjectDetector:
+    def __init__(self, model_path="yolov8n.pt"):
+        print("Loading YOLO model...")
+        self.model = YOLO(model_path)
+        print("Model loaded.")
+
+    def detect(self, frame):
+        results = self.model(frame, classes=2, verbose=False)  # Class 2 is for cars
+
+        # * THIS IMPLEMENTATION IS FOR THE OPENCV TRACKER
+        bounding_boxes = []
+        for result in results:
+            for box in result.boxes:
+                bounding_boxes.append(box.xyxy[0].tolist())
+        
+        return bounding_boxes
 
 class CentroidTracker:
     def __init__(self, maxDisappeared=50):
@@ -119,47 +134,33 @@ class CentroidTracker:
                 for col in unusedCols:
                     self.register(inputCentroids[col])
 
-        return self.objects     
+        return self.objects
 
-class FileVideoReader:
-    def __init__(self, video_name):
-        self.video_path = VIDEOS_PATH + video_name
-        self.cap = cv2.VideoCapture(self.video_path)
-        if not self.cap.isOpened():
-            raise ValueError(f"Error opening video file: {self.video_path}")
 
-    def read(self):
-        while True:
-            # cap.read() reads the next frame from the video
-            # ret indicates if the frame was read successfully (TRUE)
-            # frame is the image 
-            ret, frame = self.cap.read()
+def count_cars_across_line(tracked_objects, position_history, line_y, counted_ids_up, counted_ids_down):
+    """Counts vehicles crossing a horizontal line"""
+    up_increment = 0
+    down_increment = 0
+
+    for obj_id, (cx, cy) in tracked_objects.items():
+        if obj_id in position_history:
+            prev_cy = position_history[obj_id]
+
+            # Moving down
+            if prev_cy < line_y <= cy and obj_id not in counted_ids_down:
+                down_increment += 1
+                counted_ids_down.add(obj_id)
             
-            # If ret=False, it means the video has ended
-            if not ret:
-                break
-            yield frame
+            # Moving up
+            elif prev_cy > line_y >= cy and obj_id not in counted_ids_up:
+                up_increment += 1
+                counted_ids_up.add(obj_id)
 
-    def release(self):
-        self.cap.release()
-        cv2.destroyAllWindows()
+        # Update the actual position
+        position_history[obj_id] = cy
+    
+    return up_increment, down_increment
 
-class ObjectDetector:
-    def __init__(self, model_path="yolov8n.pt"):
-        print("Loading YOLO model...")
-        self.model = YOLO(model_path)
-        print("Model loaded.")
-
-    def detect(self, frame):
-        results = self.model(frame, classes=2, verbose=False)  # Class 2 is for cars
-
-        # * THIS IMPLEMENTATION IS FOR THE OPENCV TRACKER
-        bounding_boxes = []
-        for result in results:
-            for box in result.boxes:
-                bounding_boxes.append(box.xyxy[0].tolist())
-        
-        return bounding_boxes
 
 def process_video(video_name, show_video): #* Change this depending if we want to visualize the video or not
     LINE_Y = 650
@@ -199,10 +200,10 @@ def process_video(video_name, show_video): #* Change this depending if we want t
     video_reader.release()
     return vehicles_up, vehicles_down
 
+
 ######## MAIN ########
 if __name__ == "__main__":
     video_file = "video1.mp4" 
     up_count, down_count = process_video(video_file, show_video=True)
     print(f"Total cars moving UP: {up_count}")
     print(f"Total cars moving DOWN: {down_count}")
-    
